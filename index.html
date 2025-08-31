@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TikTok & MP4 Previewer</title>
+<title>Video Previewer</title>
 <style>
 body { font-family: sans-serif; text-align: center; background:#111; color:#fff; }
-input, button { margin:10px; padding:8px; font-size:16px; width: 300px; }
+input, button { margin:10px; padding:8px; font-size:16px; width:300px; }
 video { margin-top:20px; max-width:90%; border:2px solid #fff; border-radius:10px; display:block; margin:auto; }
 </style>
 </head>
 <body>
-<h1>TikTok & MP4 Previewer</h1>
+<h1>Video Previewer</h1>
 
-<p>Paste a video URL (MP4 or TikTok):</p>
-<input type="text" id="videoURL" placeholder="https://...">
+<p>Paste a video URL (direct MP4):</p>
+<input type="text" id="videoURL" placeholder="https://example.com/video.mp4">
 <button id="previewURLBtn">Preview URL</button>
 
 <p>Or choose a local MP4 file:</p>
@@ -26,7 +26,7 @@ video { margin-top:20px; max-width:90%; border:2px solid #fff; border-radius:10p
 <script>
 const videoPlayer = document.getElementById("videoPlayer");
 
-// Helper: play video
+// Play video helper
 function playVideo(url) {
     videoPlayer.src = url;
     videoPlayer.load();
@@ -41,38 +41,18 @@ document.getElementById("previewFileBtn").onclick = () => {
     playVideo(URL.createObjectURL(file));
 };
 
-// Preview URL (MP4 or TikTok)
-document.getElementById("previewURLBtn").onclick = async () => {
+// Preview URL
+document.getElementById("previewURLBtn").onclick = () => {
     const url = document.getElementById("videoURL").value.trim();
     if (!url) return alert("Please enter a URL.");
 
-    // If direct MP4
     if (url.toLowerCase().endsWith(".mp4")) {
         playVideo(url);
-        return;
+    } else if (url.includes("tiktok.com")) {
+        alert("Direct TikTok links cannot be previewed on GitHub Pages.\nYou need to download the video first or use a direct MP4 link.");
+    } else {
+        alert("Only direct MP4 URLs or local files are supported.");
     }
-
-    // Try TikTok hack
-    if (url.includes("tiktok.com")) {
-        try {
-            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-            const text = await res.json();
-            const html = text.contents;
-
-            // Extract video URL from meta tag
-            const match = html.match(/"playAddr":"(.*?)"/);
-            if (!match) return alert("Could not find video URL. TikTok may block this.");
-
-            const tiktokURL = match[1].replace(/\\u0026/g, "&");
-            playVideo(tiktokURL);
-        } catch (e) {
-            alert("Failed to fetch TikTok video. CORS may block it.");
-            console.error(e);
-        }
-        return;
-    }
-
-    alert("Only direct .mp4 or TikTok URLs are supported.");
 };
 </script>
 </body>
