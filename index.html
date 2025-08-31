@@ -3,18 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FFmpeg Browser Scaling</title>
+<title>FFmpeg Browser Video Processor</title>
 <style>
-body { font-family:sans-serif; text-align:center; background:#111; color:#fff; }
-input, button { margin:10px; padding:8px; font-size:16px; }
-video { margin-top:20px; max-width:90%; border:2px solid #fff; border-radius:10px; display:block; margin:auto; }
+body { font-family: sans-serif; text-align: center; background: #111; color: #fff; }
+input, button { margin: 10px; padding: 10px; font-size: 16px; }
+video { margin-top: 20px; max-width: 90%; border: 2px solid #fff; border-radius: 10px; display: block; margin:auto; }
+#status { margin-top: 20px; }
 </style>
 </head>
 <body>
-<h1>FFmpeg Browser Video Scaler</h1>
 
+<h1>FFmpeg Browser Video Processor</h1>
 <input type="file" id="fileInput" accept="video/mp4">
-<button id="processBtn">Scale Video 50%</button>
+<button id="processBtn">Process Video</button>
+<div id="status"></div>
 <video id="videoPlayer" controls></video>
 <a id="downloadLink" style="display:block; margin-top:20px; color:#0f0;"></a>
 
@@ -27,17 +29,26 @@ const fileInput = document.getElementById("fileInput");
 const processBtn = document.getElementById("processBtn");
 const videoPlayer = document.getElementById("videoPlayer");
 const downloadLink = document.getElementById("downloadLink");
+const status = document.getElementById("status");
 
 processBtn.onclick = async () => {
     if (!fileInput.files.length) return alert("Select a file first!");
     const file = fileInput.files[0];
 
+    status.textContent = "Loading FFmpeg…";
     if (!ffmpeg.isLoaded()) await ffmpeg.load();
+
+    status.textContent = "Processing video… Please wait.";
 
     ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
 
-    // Scale video to 50%
-    await ffmpeg.run('-i', 'input.mp4', '-vf', 'scale=iw/2:ih/2', 'output.mp4');
+    try {
+        // Scale video to 50%
+        await ffmpeg.run('-i', 'input.mp4', '-vf', 'scale=iw/2:ih/2', 'output.mp4');
+    } catch (err) {
+        status.textContent = "Error processing video: " + err;
+        return;
+    }
 
     const data = ffmpeg.FS('readFile', 'output.mp4');
     const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
@@ -48,8 +59,11 @@ processBtn.onclick = async () => {
 
     downloadLink.href = url;
     downloadLink.download = 'output.mp4';
-    downloadLink.textContent = "Download Scaled Video";
+    downloadLink.textContent = "Download Processed Video";
+
+    status.textContent = "Done!";
 };
 </script>
+
 </body>
 </html>
