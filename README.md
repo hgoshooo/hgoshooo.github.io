@@ -1,65 +1,8 @@
-# hgoshooo.github.io
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>TikTok Video Processor</title>
-  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
-  <style>
-    body { font-family: sans-serif; text-align: center; background: #111; color: #fff; }
-    input, button { margin: 10px; padding: 8px; font-size: 16px; }
-    video { margin-top: 20px; max-width: 90%; border: 2px solid #fff; border-radius: 10px; }
-  </style>
-</head>
-<body>
-  <h1>TikTok Video Processor</h1>
-  <p>Paste a direct TikTok video URL (.mp4):</p>
-  <input id="videoUrl" type="text" placeholder="https://example.com/video.mp4" size="50">
-  <button id="processBtn">Process</button>
-  <p id="status"></p>
-  <video id="outputVideo" controls></video>
+# TikTok Video Processor
 
-  <script>
-    const { createFFmpeg, fetchFile } = FFmpeg;
-    const ffmpeg = createFFmpeg({ log: true });
+This tool lets you paste a direct TikTok `.mp4` link, processes it with FFmpeg (`-itsscale 0.5`), and plays the result in your browser.
 
-    document.getElementById("processBtn").onclick = async () => {
-      const url = document.getElementById("videoUrl").value.trim();
-      const status = document.getElementById("status");
-      const output = document.getElementById("outputVideo");
+👉 [Open the Demo](https://yourusername.github.io/yourrepo/)
 
-      if (!url) {
-        status.textContent = "⚠️ Please enter a video URL.";
-        return;
-      }
-
-      status.textContent = "Downloading video...";
-      const videoData = await fetchFile(url);
-
-      if (!ffmpeg.isLoaded()) {
-        status.textContent = "Loading FFmpeg (first time takes a while)...";
-        await ffmpeg.load();
-      }
-
-      status.textContent = "Processing with FFmpeg...";
-      ffmpeg.FS("writeFile", "input.mp4", videoData);
-
-      // Your exact command
-      await ffmpeg.run(
-        "-itsscale", "0.5",
-        "-i", "input.mp4",
-        "-c:v", "copy",
-        "-c:a", "copy",
-        "output.mp4"
-      );
-
-      const data = ffmpeg.FS("readFile", "output.mp4");
-      const blob = new Blob([data.buffer], { type: "video/mp4" });
-      const urlOut = URL.createObjectURL(blob);
-
-      output.src = urlOut;
-      status.textContent = "✅ Done! Video processed. You can play it below.";
-    };
-  </script>
-</body>
-</html>
+---
+⚠️ Note: You must use a **direct .mp4 link**, not just a TikTok page link.
