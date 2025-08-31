@@ -1,47 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Video Processor (Local)</title>
-  <style>
-    body { font-family: sans-serif; text-align: center; background: #111; color: #fff; }
-    input, button { margin: 10px; padding: 8px; font-size: 16px; }
-    video { margin-top: 20px; max-width: 90%; border: 2px solid #fff; border-radius: 10px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TikTok Video Processor</title>
+<style>
+body { font-family: sans-serif; text-align: center; background:#111; color:#fff; }
+input, button { margin:10px; padding:8px; font-size:16px; }
+video { margin-top:20px; max-width:90%; border:2px solid #fff; border-radius:10px; }
+</style>
 </head>
 <body>
-  <h1>Video Processor (Local)</h1>
-  <p>Select a local MP4 file:</p>
-  <input type="file" id="fileInput" accept="video/mp4">
-  <button id="processBtn">Process</button>
-  <p id="status"></p>
-  <video id="outputVideo" controls></video>
+<h1>TikTok Video Processor</h1>
+<p>Select a local MP4 file:</p>
+<input type="file" id="fileInput" accept="video/mp4">
+<button id="processBtn">Process</button>
+<p id="status"></p>
+<video id="outputVideo" controls></video>
 
-  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
-  <script>
-    const { createFFmpeg, fetchFile } = FFmpeg;
-    const ffmpeg = createFFmpeg({ log: true });
-    const status = document.getElementById("status");
-    const output = document.getElementById("outputVideo");
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
+<script>
+const { createFFmpeg, fetchFile } = FFmpeg;
+const ffmpeg = createFFmpeg({ log: true });
+const status = document.getElementById("status");
+const output = document.getElementById("outputVideo");
 
-    document.getElementById("processBtn").onclick = async () => {
-      const fileInput = document.getElementById("fileInput");
-      if (fileInput.files.length === 0) { status.textContent = "⚠️ Please select a file."; return; }
+document.getElementById("processBtn").onclick = async () => {
+    const fileInput = document.getElementById("fileInput");
+    if (fileInput.files.length === 0) {
+        status.textContent = "⚠️ Please select a file.";
+        return;
+    }
 
-      const file = fileInput.files[0];
-      status.textContent = "Loading FFmpeg...";
-      if (!ffmpeg.isLoaded()) await ffmpeg.load();
+    const file = fileInput.files[0];
+    status.textContent = "Loading FFmpeg...";
+    if (!ffmpeg.isLoaded()) await ffmpeg.load();
 
-      status.textContent = "Processing video...";
-      ffmpeg.FS("writeFile", "input.mp4", await fetchFile(file));
+    status.textContent = "Processing video...";
+    ffmpeg.FS("writeFile", "input.mp4", await fetchFile(file));
 
-      // Half-size scale (you can replace with your ffmpeg command)
-      await ffmpeg.run("-i","input.mp4","-vf","scale=iw/2:ih/2","-c:v","libx264","-c:a","copy","output.mp4");
+    // Scale video width/height by 0.5
+    await ffmpeg.run("-i","input.mp4","-vf","scale=iw/2:ih/2","-c:v","copy","-c:a","copy","output.mp4");
 
-      const data = ffmpeg.FS("readFile","output.mp4");
-      output.src = URL.createObjectURL(new Blob([data.buffer], {type:"video/mp4"}));
-      status.textContent = "✅ Done! Play below.";
-    };
-  </script>
+    const data = ffmpeg.FS("readFile","output.mp4");
+    output.src = URL.createObjectURL(new Blob([data.buffer], {type:"video/mp4"}));
+    status.textContent = "✅ Done! Play below.";
+};
+</script>
 </body>
 </html>
