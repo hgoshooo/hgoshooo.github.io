@@ -7,20 +7,21 @@
 <style>
 body { font-family: sans-serif; text-align: center; background: #111; color: #fff; }
 input, button { margin: 10px; padding: 10px; font-size: 16px; }
-video { margin-top: 20px; max-width: 90%; border: 2px solid #fff; border-radius: 10px; display: block; margin:auto; }
+video { margin-top: 20px; max-width: 90%; border: 2px solid #fff; border-radius: 10px; display:block; margin:auto; }
 #status { margin-top: 20px; }
 </style>
 </head>
 <body>
 
 <h1>FFmpeg Browser Video Processor</h1>
+
 <input type="file" id="fileInput" accept="video/mp4">
-<button id="processBtn">Process Video</button>
-<div id="status"></div>
+<button id="processBtn" disabled>Process Video</button>
+<div id="status">Loading FFmpeg…</div>
 <video id="videoPlayer" controls></video>
 <a id="downloadLink" style="display:block; margin-top:20px; color:#0f0;"></a>
 
-<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.8/dist/ffmpeg.min.js"></script>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.8/dist/ffmpeg.min.js"></script>
 <script>
 const { createFFmpeg, fetchFile } = FFmpeg;
 const ffmpeg = createFFmpeg({ log: true });
@@ -31,12 +32,16 @@ const videoPlayer = document.getElementById("videoPlayer");
 const downloadLink = document.getElementById("downloadLink");
 const status = document.getElementById("status");
 
+// Load FFmpeg
+(async () => {
+    await ffmpeg.load();
+    status.textContent = "FFmpeg ready!";
+    processBtn.disabled = false;
+})();
+
 processBtn.onclick = async () => {
     if (!fileInput.files.length) return alert("Select a file first!");
     const file = fileInput.files[0];
-
-    status.textContent = "Loading FFmpeg…";
-    if (!ffmpeg.isLoaded()) await ffmpeg.load();
 
     status.textContent = "Processing video… Please wait.";
 
