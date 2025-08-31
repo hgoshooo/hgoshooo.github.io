@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Video Preview</title>
+<title>Video Previewer</title>
 <style>
 body { font-family: sans-serif; text-align: center; background:#111; color:#fff; }
 input, button { margin:10px; padding:8px; font-size:16px; }
@@ -31,7 +31,8 @@ document.getElementById("previewURLBtn").onclick = () => {
     const url = document.getElementById("videoURL").value.trim();
     if (!url) return alert("Please enter a video URL.");
     videoPlayer.src = url;
-    videoPlayer.play().catch(()=>{}); // autoplay may fail due to browser policies
+    videoPlayer.load();
+    videoPlayer.play().catch(()=>{});
 };
 
 // Preview local file
@@ -40,6 +41,7 @@ document.getElementById("previewFileBtn").onclick = () => {
     if (!fileInput.files.length) return alert("Please select a file.");
     const file = fileInput.files[0];
     videoPlayer.src = URL.createObjectURL(file);
+    videoPlayer.load();
     videoPlayer.play().catch(()=>{});
 };
 </script>
