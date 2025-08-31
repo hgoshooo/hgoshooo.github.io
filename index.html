@@ -12,7 +12,7 @@
 </head>
 <body>
   <h1>TikTok Video Processor</h1>
-  <p>Paste a direct TikTok video URL (.mp4):</p>
+  <p>Paste a direct video URL (.mp4):</p>
   <input id="videoUrl" type="text" placeholder="https://example.com/video.mp4" size="50">
   <button id="processBtn">Process</button>
   <p id="status"></p>
@@ -32,32 +32,37 @@
         return;
       }
 
-      status.textContent = "Downloading video...";
-      const videoData = await fetchFile(url);
+      try {
+        status.textContent = "Downloading video...";
+        const videoData = await fetchFile(url);
 
-      if (!ffmpeg.isLoaded()) {
-        status.textContent = "Loading FFmpeg (first time takes a while)...";
-        await ffmpeg.load();
+        if (!ffmpeg.isLoaded()) {
+          status.textContent = "Loading FFmpeg (first time takes a while)...";
+          await ffmpeg.load();
+        }
+
+        status.textContent = "Processing with FFmpeg...";
+        ffmpeg.FS("writeFile", "input.mp4", videoData);
+
+        // Changed to use scale filter (half size)
+        await ffmpeg.run(
+          "-i", "input.mp4",
+          "-vf", "scale=iw/2:ih/2",
+          "-c:v", "libx264",
+          "-c:a", "copy",
+          "output.mp4"
+        );
+
+        const data = ffmpeg.FS("readFile", "output.mp4");
+        const blob = new Blob([data.buffer], { type: "video/mp4" });
+        const urlOut = URL.createObjectURL(blob);
+
+        output.src = urlOut;
+        status.textContent = "✅ Done! Video processed. You can play it below.";
+      } catch (err) {
+        console.error(err);
+        status.textContent = "❌ Error: " + err.message;
       }
-
-      status.textContent = "Processing with FFmpeg...";
-      ffmpeg.FS("writeFile", "input.mp4", videoData);
-
-      // Your exact command
-      await ffmpeg.run(
-        "-itsscale", "0.5",
-        "-i", "input.mp4",
-        "-c:v", "copy",
-        "-c:a", "copy",
-        "output.mp4"
-      );
-
-      const data = ffmpeg.FS("readFile", "output.mp4");
-      const blob = new Blob([data.buffer], { type: "video/mp4" });
-      const urlOut = URL.createObjectURL(blob);
-
-      output.src = urlOut;
-      status.textContent = "✅ Done! Video processed. You can play it below.";
     };
   </script>
 </body>
