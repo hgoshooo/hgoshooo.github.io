@@ -3,72 +3,140 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Video Processor</title>
+<title>Local Video Processor with FFmpeg</title>
 <style>
-body { font-family: sans-serif; text-align: center; background: #111; color: #fff; }
-input, button { margin: 10px; padding: 10px; font-size: 16px; }
-video { margin-top: 20px; max-width: 90%; border: 2px solid #fff; border-radius: 10px; display:block; margin:auto; }
-#status { margin-top: 20px; }
-a { color: #0f0; display: block; margin-top: 10px; }
+/* Basic page styling */
+body {
+    font-family: sans-serif;          /* Clean font */
+    text-align: center;               /* Center everything */
+    background: #111;                 /* Dark background for contrast */
+    color: #fff;                      /* White text */
+}
+
+/* Style the file input and button */
+input, button {
+    margin: 10px;
+    padding: 10px;
+    font-size: 16px;
+}
+
+/* Video player styling */
+video {
+    margin-top: 20px;
+    max-width: 90%;                   /* Responsive width */
+    border: 2px solid #fff;
+    border-radius: 10px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Status text */
+#status {
+    margin-top: 20px;
+}
+
+/* Download link style */
+a {
+    color: #0f0;
+    display: block;
+    margin-top: 10px;
+}
 </style>
 </head>
 <body>
 
-<h1>Local Video Processor</h1>
+<h1>Local Video Processor with FFmpeg</h1>
 
+<!-- File selector -->
 <input type="file" id="fileInput" accept="video/mp4">
+<!-- Process button -->
 <button id="processBtn" disabled>Process Video</button>
+<!-- Status message -->
 <div id="status">Loading FFmpeg…</div>
 
+<!-- Video preview -->
 <video id="videoPlayer" controls></video>
+<!-- Download link -->
 <a id="downloadLink"></a>
 
+<!-- FFmpeg.wasm library -->
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.8/dist/ffmpeg.min.js"></script>
-<script>
-const { createFFmpeg, fetchFile } = FFmpeg;
-const ffmpeg = createFFmpeg({ log: true });
 
+<script>
+/*
+ * Step 1: Initialize FFmpeg.wasm
+ * FFmpeg.wasm allows us to run FFmpeg commands entirely in the browser using WebAssembly.
+ * It is slower than native FFmpeg but works completely client-side.
+ */
+const { createFFmpeg, fetchFile } = FFmpeg;
+const ffmpeg = createFFmpeg({ log: true }); // log: true prints progress in console
+
+// Get HTML elements
 const fileInput = document.getElementById("fileInput");
 const processBtn = document.getElementById("processBtn");
 const videoPlayer = document.getElementById("videoPlayer");
 const downloadLink = document.getElementById("downloadLink");
 const status = document.getElementById("status");
 
-// Load FFmpeg first
+// Step 2: Load FFmpeg
 (async () => {
-    await ffmpeg.load();
-    status.textContent = "FFmpeg ready! Select a video.";
-    processBtn.disabled = false;
+    status.textContent = "Loading FFmpeg core, please wait…";
+    await ffmpeg.load(); // This downloads FFmpeg.wasm core into the browser
+    status.textContent = "FFmpeg loaded! Select a video to start processing.";
+    processBtn.disabled = false; // Enable the button only when FFmpeg is ready
 })();
 
+/*
+ * Step 3: Process button click handler
+ * This will take the selected file, run FFmpeg on it, and produce a scaled video.
+ */
 processBtn.onclick = async () => {
-    if (!fileInput.files.length) return alert("Select a file first!");
-    const file = fileInput.files[0];
-
-    status.textContent = "Processing… this may take a few seconds.";
-
-    ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
-
-    try {
-        // Example FFmpeg command: scale video to 50%
-        await ffmpeg.run('-i', 'input.mp4', '-vf', 'scale=iw/2:ih/2', 'output.mp4');
-    } catch (err) {
-        status.textContent = "Error processing video: " + err;
+    // Check if a file is selected
+    if (!fileInput.files.length) {
+        alert("Please select a video file first!");
         return;
     }
 
+    const file = fileInput.files[0]; // Get the file object
+
+    status.textContent = "Processing video… This may take a few seconds depending on video size.";
+
+    // Write the file to FFmpeg’s virtual filesystem
+    ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
+
+    try {
+        /*
+         * Step 4: Run FFmpeg command
+         * -i input.mp4 -> input file
+         * -vf scale=iw/2:ih/2 -> scale the video to 50% of width (iw) and height (ih)
+         * output.mp4 -> output file
+         */
+        await ffmpeg.run('-i', 'input.mp4', '-vf', 'scale=iw/2:ih/2', 'output.mp4');
+    } catch (err) {
+        status.textContent = "Error during processing: " + err;
+        return;
+    }
+
+    /*
+     * Step 5: Read the output file from FFmpeg's filesystem
+     * FFmpeg.wasm keeps files in memory, so we need to convert it to a Blob
+     * to preview in the browser.
+     */
     const data = ffmpeg.FS('readFile', 'output.mp4');
     const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
 
+    // Step 6: Set the video player source to the processed video
     videoPlayer.src = url;
     videoPlayer.load();
     videoPlayer.play().catch(() => {});
 
+    // Step 7: Provide a download link
     downloadLink.href = url;
     downloadLink.download = 'output.mp4';
     downloadLink.textContent = "Download Processed Video";
 
-    status.textContent = "Done!";
+    status.textContent = "Done! Video processed successfully.";
 };
 </script>
 
